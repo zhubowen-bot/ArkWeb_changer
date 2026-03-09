@@ -1,0 +1,7 @@
+{
+  "layered-image":
+  {
+    "background" : "$media:qwen2",
+    "foreground" : "$media:qwen2"
+  }
+}

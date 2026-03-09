@@ -1,0 +1,10 @@
+{
+  "app": {
+    "bundleName": "com.bowenapp.qwen",
+    "vendor": "example",
+    "versionCode": 8000042,
+    "versionName": "8.4.2",
+    "icon": "$media:app_layered_image",
+    "label": "$string:app_name"
+  }
+}

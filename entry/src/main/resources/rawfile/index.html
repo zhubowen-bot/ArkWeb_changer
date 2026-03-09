@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI文本转换</title>
+    <style>
+        /* Design Tokens */
+        :root {
+            /* Colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --border-primary: #e2e8f0;
+            --border-secondary: #cbd5e1;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --success-hover: #059669;
+            --nav-active: #3b82f6;
+            --nav-inactive: #94a3b8;
+
+            /* Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+
+            /* Typography */
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-size-2xl: 1.5rem;
+            --font-size-3xl: 1.875rem;
+
+            /* Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+
+            /* Transitions */
+            --transition-fast: 150ms;
+            --transition-base: 220ms;
+            --transition-slow: 300ms;
+
+            /* Z-index */
+            --z-nav: 100;
+            --z-toast: 1000;
+
+            /* Bottom nav height (base, without safe area) */
+            --nav-height: 56px;
+
+            /* Safe area inset for bottom (will be overridden by env() at runtime) */
+            --safe-area-bottom: 0px;
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0f172a;
+                --bg-secondary: #1e293b;
+                --bg-tertiary: #334155;
+                --text-primary: #f8fafc;
+                --text-secondary: #cbd5e1;
+                --text-tertiary: #94a3b8;
+                --border-primary: #334155;
+                --border-secondary: #475569;
+                --accent: #60a5fa;
+                --accent-hover: #3b82f6;
+                --success: #34d399;
+                --success-hover: #10b981;
+                --nav-active: #60a5fa;
+                --nav-inactive: #64748b;
+            }
+        }
+
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            /* Ensure the html element fills the viewport */
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: var(--font-size-base);
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            min-height: 100%;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            /*
+             * 底部避让: 导航栏高度(56px) + 安全区域底部高度
+             * 使用 max() 确保最小有足够的间距
+             * env(safe-area-inset-bottom) 在鸿蒙沉浸式模式下会返回导航条高度
+             */
+            padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, var(--safe-area-bottom)));
+            padding-bottom: calc(var(--nav-height) + max(env(safe-area-inset-bottom, var(--safe-area-bottom)), 0px));
+        }
+
+        /* Container */
+        .container {
+            max-width: 100%;
+            padding: var(--space-md);
+            margin: 0 auto;
+            min-height: calc(100vh - var(--nav-height) - env(safe-area-inset-bottom, var(--safe-area-bottom)));
+        }
+
+        /* Page Wrapper */
+        .page {
+            display: none;
+            animation: fadeIn var(--transition-slow) ease-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: var(--space-xl) 0 var(--space-lg);
+            animation: fadeInDown var(--transition-slow) ease-out;
+        }
+
+        .title {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .subtitle {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        /* Main Content */
+        .main {
+            animation: fadeIn var(--transition-slow) ease-out var(--transition-fast);
+            animation-fill-mode: both;
+        }
+
+        /* Input Section */
+        .input-section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-label {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .char-count {
+            font-weight: 400;
+            color: var(--text-tertiary);
+        }
+
+        .textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: var(--space-md);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            resize: vertical;
+            transition: all var(--transition-base) ease;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-primary);
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+        }
+
+        /* Button Group */
+        .button-group {
+            display: flex;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .button {
+            flex: 1;
+            padding: var(--space-md) var(--space-lg);
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base) ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            min-height: 48px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .button-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .button-primary:active {
+            transform: translateY(0);
+        }
+
+        .button-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-primary);
+        }
+
+        .button-secondary:hover {
+            background: var(--bg-secondary);
+            border-color: var(--border-secondary);
+        }
+
+        .button-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .button-success:hover {
+            background: var(--success-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Output Section */
+        .output-section {
+            margin-bottom: var(--space-lg);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all var(--transition-base) ease;
+        }
+
+        .output-section.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .output-box {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            min-height: 100px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        .output-empty {
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+
+        /* About Page */
+        .about-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-md);
+            /* 额外底部间距，确保内容不被导航栏遮挡 */
+            padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom, var(--safe-area-bottom)));
+        }
+
+        .app-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--space-lg);
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .app-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: white;
+        }
+
+        .app-name {
+            font-size: var(--font-size-3xl);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: var(--space-sm);
+        }
+
+        .app-version {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: var(--space-2xl);
+        }
+
+        .info-section {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-lg);
+        }
+
+        .info-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            margin-bottom: var(--space-md);
+            color: var(--text-primary);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: var(--space-md);
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: var(--space-md);
+            margin-top: 2px;
+            fill: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .info-content {
+            flex: 1;
+        }
+
+        .info-label {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .info-value {
+            font-size: var(--font-size-base);
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .info-link {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color var(--transition-base) ease;
+        }
+
+        .info-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        .copyright {
+            text-align: center;
+            font-size: var(--font-size-sm);
+            color: var(--text-tertiary);
+            margin-top: var(--space-2xl);
+            padding-top: var(--space-lg);
+            border-top: 1px solid var(--border-primary);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-primary);
+            z-index: var(--z-nav);
+            display: flex;
+            justify-content: space-around;
+            /*
+             * 关键修改：底部导航栏避让安全区域
+             * 使用 max() 确保:
+             * 1. 至少有 var(--space-sm) 的基础内边距
+             * 2. 如果 env(safe-area-inset-bottom) 更大，则使用安全区域值
+             * 这在鸿蒙沉浸式模式下，env(safe-area-inset-bottom) 会返回系统导航条的高度
+             */
+            padding: var(--space-sm) 0 max(var(--space-sm), env(safe-area-inset-bottom, var(--safe-area-bottom)));
+            box-shadow: 0 -2px 10px rgb(0 0 0 / 0.05);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-sm);
+            cursor: pointer;
+            transition: all var(--transition-base) ease;
+            -webkit-tap-highlight-color: transparent;
+            text-decoration: none;
+            color: var(--nav-inactive);
+        }
+
+        .nav-item.active {
+            color: var(--nav-active);
+        }
+
+        .nav-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: var(--space-xs);
+            fill: currentColor;
+            transition: transform var(--transition-base) ease;
+        }
+
+        .nav-item:hover .nav-icon {
+            transform: scale(1.1);
+        }
+
+        .nav-item.active .nav-icon {
+            transform: scale(1.15);
+        }
+
+        .nav-label {
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            /*
+             * Toast 位置调整，确保在导航栏和安全区域之上显示
+             * 计算方式: 导航栏基础高度 + 安全区域高度 + 额外间距
+             */
+            bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, var(--safe-area-bottom)) + 20px);
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-lg);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transition: all var(--transition-base) ease;
+            z-index: var(--z-toast);
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Icons */
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Responsive */
+        @media (min-width: 640px) {
+            .container {
+                max-width: 640px;
+                padding: var(--space-lg);
+            }
+
+            .title {
+                font-size: var(--font-size-3xl);
+            }
+
+            .button-group {
+                flex-direction: row;
+            }
+
+            .bottom-nav {
+                max-width: 640px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            }
+        }
+
+        /* Prevent zoom on input focus (iOS) */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            .textarea {
+                font-size: 16px;
+            }
+        }
+
+        /*
+         * 鸿蒙沉浸式适配增强
+         * 确保 Web 内容延伸到安全区域
+         */
+        @supports (padding: max(0px)) {
+            body {
+                /* 使用 max() 函数进行更精确的避让 */
+                padding-bottom: calc(var(--nav-height) + max(env(safe-area-inset-bottom, 0px), 0px));
+            }
+
+            .bottom-nav {
+                padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom, 0px));
+            }
+
+            .toast {
+                bottom: calc(var(--nav-height) + max(env(safe-area-inset-bottom, 0px), 0px) + 20px);
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- AI转换页面 -->
+<div id="converterPage" class="page active">
+    <div class="container">
+        <header class="header">
+            <h1 class="title">Markdown 转纯文本</h1>
+            <p class="subtitle">快速清除 # 和 * 标记符号</p>
+        </header>
+
+        <main class="main">
+            <section class="input-section">
+                <div class="section-label">
+                    <span>输入 Markdown 文本</span>
+                    <span class="char-count" id="inputCount">0 字符</span>
+                </div>
+                <textarea
+                        class="textarea"
+                        id="inputText"
+                        placeholder="在此粘贴或输入 Markdown 文本...
+
+例如：
+# 这是标题
+## 这是二级标题
+* 这是列表项
+**这是粗体文本***"
+                        autofocus
+                ></textarea>
+            </section>
+
+            <div class="button-group">
+                <button class="button button-primary" id="convertBtn">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    转换
+                </button>
+                <button class="button button-secondary" id="clearBtn">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    清空
+                </button>
+            </div>
+
+            <section class="output-section" id="outputSection">
+                <div class="section-label">
+                    <span>转换结果</span>
+                    <span class="char-count" id="outputCount">0 字符</span>
+                </div>
+                <div class="output-box" id="outputText">
+                    <span class="output-empty">转换结果将显示在这里...</span>
+                </div>
+                <button class="button button-success" id="copyBtn" style="margin-top: var(--space-md); width: 100%;">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                    复制结果
+                </button>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- 关于页面 -->
+<div id="aboutPage" class="page">
+    <div class="about-container">
+        <div class="app-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+        </div>
+
+        <h1 class="app-name">AI文本转换</h1>
+        <p class="app-version">BowenAPP系列 版本 3.1.0</p>
+
+        <div class="info-section">
+            <h2 class="info-title">应用信息</h2>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <div class="info-content">
+                    <div class="info-label">支持平台及版本更新进度</div>
+                    <div class="info-value">
+                        [Web版]<br>1.0.1版本（2026年1月更新）
+                        <br>
+                        [Harmony OS版]<br>3.1.0版本（2026年2月更新）
+                        <br>
+                        [Android&IOS版]<br>暂未开发
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24">
+                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                </svg>
+                <div class="info-content">
+                    <div class="info-label">最近更新</div>
+                    <div class="info-value">2026年2月</div>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                <div class="info-content">
+                    <div class="info-label">功能特点</div>
+                    <div class="info-value">界面极简清爽、内存占用极小<br>响应快速流畅、支持深色模式<br>ArkTS鸿蒙原生开发<br>鸿蒙手机、平板、电脑多端部署<br>智能文本转换<br>一键清除标记、跨平台支持</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2 class="info-title">联系我们</h2>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                <div class="info-content">
+                    <div class="info-label">邮箱</div>
+                    <div class="info-value">
+                        <a href="mailto:bowen_zbw@sjtu.edu.cn" class="info-link">bowen_zbw@sjtu.edu.cn</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24">
+                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                </svg>
+                <div class="info-content">
+                    <div class="info-label">电话</div>
+                    <div class="info-value">
+                        <a href="tel:15196443523" class="info-link">15196443523</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <div class="info-content">
+                    <div class="info-label">备用邮箱</div>
+                    <div class="info-value">
+                        <a href="mailto:15196443523@139.com" class="info-link">15196443523@139.com</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="copyright">
+            <p>© 2026 Bowen_ZBW</p>
+            <p style="margin-top: var(--space-xs); font-size: var(--font-size-xs);">All rights reserved.</p>
+        </div>
+    </div>
+</div>
+
+<!-- 底部导航 -->
+<nav class="bottom-nav">
+    <a href="#" class="nav-item active" data-page="converterPage">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <span class="nav-label">AI转换</span>
+    </a>
+
+    <a href="#" class="nav-item" data-page="aboutPage">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+        <span class="nav-label">关于</span>
+    </a>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // Page navigation
+    const pages = document.querySelectorAll('.page');
+    const navItems = document.querySelectorAll('.nav-item');
+
+    function switchPage(pageId) {
+        // Hide all pages
+        pages.forEach(page => page.classList.remove('active'));
+
+        // Remove active from all nav items
+        navItems.forEach(item => item.classList.remove('active'));
+
+        // Show selected page
+        document.getElementById(pageId).classList.add('active');
+
+        // Add active to selected nav item
+        document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+
+        // Focus input if switching to converter
+        if (pageId === 'converterPage') {
+            setTimeout(() => inputText.focus(), 100);
+        }
+    }
+
+    // Nav item click handlers
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const pageId = item.dataset.page;
+            switchPage(pageId);
+        });
+    });
+
+    // Elements for converter
+    const inputText = document.getElementById('inputText');
+    const outputText = document.getElementById('outputText');
+    const outputSection = document.getElementById('outputSection');
+    const convertBtn = document.getElementById('convertBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const inputCount = document.getElementById('inputCount');
+    const outputCount = document.getElementById('outputCount');
+    const toast = document.getElementById('toast');
+
+    // Update character count
+    function updateCharCount() {
+        inputCount.textContent = `${inputText.value.length} 字符`;
+    }
+
+    // Convert markdown to plain text
+    function convertMarkdown() {
+        const text = inputText.value;
+        if (!text.trim()) {
+            showToast('请先输入文本');
+            return;
+        }
+
+        // Remove # and * characters
+        const plainText = text.replace(/[#*]/g, '');
+
+        // Display result
+        outputText.innerHTML = plainText || '<span class="output-empty">转换结果为空</span>';
+        outputCount.textContent = `${plainText.length} 字符`;
+
+        // Show output section with animation
+        outputSection.classList.add('show');
+
+        // Scroll to output
+        setTimeout(() => {
+            outputSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+
+        showToast('转换成功！');
+    }
+
+    // Clear all
+    function clearAll() {
+        inputText.value = '';
+        outputText.innerHTML = '<span class="output-empty">转换结果将显示在这里...</span>';
+        outputSection.classList.remove('show');
+        inputCount.textContent = '0 字符';
+        outputCount.textContent = '0 字符';
+        inputText.focus();
+        showToast('已清空');
+    }
+
+    // Copy to clipboard
+    async function copyToClipboard() {
+        const text = outputText.textContent;
+        if (!text || text.includes('转换结果将显示在这里')) {
+            showToast('没有可复制的内容');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast('已复制到剪贴板！');
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showToast('已复制到剪贴板！');
+        }
+    }
+
+    // Show toast message
+    function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+
+    // Event listeners for converter
+    inputText.addEventListener('input', updateCharCount);
+    convertBtn.addEventListener('click', convertMarkdown);
+    clearBtn.addEventListener('click', clearAll);
+    copyBtn.addEventListener('click', copyToClipboard);
+
+    // Keyboard shortcuts
+    inputText.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + Enter to convert
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            convertMarkdown();
+        }
+        // Escape to clear
+        if (e.key === 'Escape') {
+            clearAll();
+        }
+    });
+
+    // Auto-convert on paste (optional)
+    inputText.addEventListener('paste', (e) => {
+        setTimeout(() => {
+            if (inputText.value.trim()) {
+                // Auto-convert after a short delay
+                setTimeout(convertMarkdown, 500);
+            }
+        }, 100);
+    });
+
+    // Handle email links
+    document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            showToast('正在打开邮件应用...');
+        });
+    });
+
+    // Handle phone links
+    document.querySelectorAll('a[href^="tel:"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            showToast('正在拨打电话...');
+        });
+    });
+
+    // Initialize
+    updateCharCount();
+    inputText.focus();
+</script>
+</body>
+</html>
