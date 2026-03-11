@@ -17,7 +17,7 @@
 * 内置demo链接（网页和rawfile的本地引用示例）和许多软件图标
 * 内置demo权限共5个，设置了ohos.permission.CAMERA（允许应用使用相机），ohos.permission.GET_NETWORK_INFO（允许应用获取数据网络信息），ohos.permission.INTERNET（允许使用Internet网络），ohos.permission.MICROPHONE（允许应用使用麦克风），ohos.permission.PRINT（允许应用获取打印框架的能力）
 
-部署项目：
+## 部署项目：
 
 * 使用DevEco studio导入项目，选择打开文件夹整体导入
 * entry/src/main/ets/pages/Index.ets: 顶部代码修改指向的链接
@@ -35,9 +35,41 @@
 **没学过编程的零基础小白可以这样开发鸿蒙应用：**  
 使用AI生成html文件，保存到上方rawfile文件夹，并按上述步骤部署
 
+## 网页元素避让安全区适配
+
+* Web组件启用沉浸式效果时，渲染内容可能与非安全区域重叠，影响用户的阅读和交互。非安全区域包括顶部状态栏、屏幕挖孔区和底部导航条。在沉浸式效果下，网页的标题栏被屏幕挖孔区遮挡，底部的Tab区域与导航条发生重叠。
+* 网页开发者可利用env(safe-area-inset-*)定义CSS样式，确保文字、图片和交互组件避让非安全区域。在以下示例中，通过env(safe-area-inset-*)更新了index.html的CSS样式，使网页主要内容避让非安全区域：
+* .title-bar {
+  
+      align-items: center;
+      justify-content: center;
+      top: 0;
+      height: 40px;
+      padding-top: env(safe-area-inset-top); /* 设置padding-top避让上方非安全区域 */
+  
+  }
+  .content {
+  
+      margin: 8px;
+      padding-top: calc(env(safe-area-inset-top) + 40px); /* 同步title-bar增加padding-top高度 */
+  
+  }
+  .tabs {
+  
+      justify-content: space-around;
+      bottom: 0;
+      height: calc(env(safe-area-inset-bottom) + 40px); /* 增加tab区域高度以避让下方非安全区域 */
+  
+  }
+* 具体内容见开发文档：[文档中心](https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/web-safe-area-insets)
+
 ## 致谢
 
+<<<<<<< Updated upstream
 * B站UP主[零炻] -开源仓库https://github.com/littlestone0806/WebApp-ohos
 * 本项目基于这份初始代码深度优化开发而成
 
 
+=======
+* B站UP主[零炻] -开源仓库https://github.com/littlestone0806/WebApp-ohos，本项目基于这份初始代码深度优化开发而成
+>>>>>>> Stashed changes
