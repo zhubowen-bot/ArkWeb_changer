@@ -57,7 +57,7 @@ export struct DownloadConfirmDialog {
             .hoverEffect(HoverEffect.Scale)
             .borderRadius(20)
         }
-        .width('30%')
+        .width('80%')
         .height(148)
         .borderRadius(24)
         .justifyContent(FlexAlign.Center)
@@ -66,12 +66,17 @@ export struct DownloadConfirmDialog {
         .shadow(shadowOptions)
       } else {
         Column() {
-          Text('是否下载该文件？')
+          Text('是否保存该文件？')
             .fontSize(16)
             .lineHeight(20)
             .fontColor($r('app.color.dialog_text'))
-            .margin({ bottom: 16 })
-          Row() {
+          Text('安全访问:本应用使用系统保存控件')
+            .fontSize(12)
+            .lineHeight(16)
+            .fontColor($r('app.color.button_cancel_text'))
+            .margin({ top: 8, bottom: 8, left: 35, right: 35 })
+            .textAlign(TextAlign.Center)
+          Row({ space: 8 }) {
             Button("取消")
               .onClick(() => {
                 this.dialogController.close();
@@ -93,7 +98,7 @@ export struct DownloadConfirmDialog {
               .backgroundColor($r('app.color.divider'))
               .zIndex(1)
 
-            Button("下载")
+            Button("保存")
               .width('40%')
               .height(40)
               .backgroundColor($r('app.color.button_download_bg'))
@@ -109,8 +114,8 @@ export struct DownloadConfirmDialog {
               })
           }
         }
-        .width('30%')
-        .height(108)
+        .width('80%')
+        .height(140)
         .borderRadius(24)
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
