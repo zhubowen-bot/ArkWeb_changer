@@ -1,4 +1,4 @@
-## Bowen_ArkWeb框架 正式版v1.0
+## Bowen_ArkWeb框架 正式版v1.2
 
 **这是一个基于ArkWeb深度开发的html嵌入式鸿蒙软件框架，即使你没有学过编程，你也可以零基础零编程构建自己的鸿蒙应用**  
 
@@ -16,6 +16,7 @@
 * 依据设备型号自动精确向网页申请与设备匹配的UA。
 * 内置demo链接（网页和rawfile的本地引用示例）和许多软件图标
 * 内置demo权限共5个，设置了ohos.permission.CAMERA（允许应用使用相机），ohos.permission.GET_NETWORK_INFO（允许应用获取数据网络信息），ohos.permission.INTERNET（允许使用Internet网络），ohos.permission.MICROPHONE（允许应用使用麦克风），ohos.permission.PRINT（允许应用获取打印框架的能力）
+* 添加自定义协议，以支持跳转第三方APP（见后）
 
 ## 部署项目：
 
@@ -79,6 +80,87 @@
 `.background('#F0F4F8')`
 
 即可
+
+## 关于web组件自定义协议跳转（url scheme）
+
+鸿蒙系统web组件原生支持https格式以及部分主流应用的部分功能（如微信等）跳转。
+
+有时，你会发现有些跳转链接打开后为白屏或黑屏，这是因为该跳转协议未适配。
+
+在源代码中，已经开发了处理 mailto/tel/sms（邮箱，电话，短信） 链接的部分。
+
+如果要添加自定义协议跳转，需要做专门的适配。
+
+这里，以上海交通大学交我办的`jaccount://login?uuid=xxx` 自定义协议拉起为例，
+
+用开发者工具分析移动端网站跳转交我办的代码，可以发现其网页采用URL Scheme
+
+`function appLogin() {
+    showTryAppLogin(5000);  // 显示等待界面，5秒超时
+    if (firefox) {
+        // Firefox 特殊兼容：通过隐藏 iframe + a 标签触发
+        document.getElementById("firefox_link").click();
+    } else {
+        // 主流浏览器：直接跳转 URL Scheme
+        window.location.href = 'jaccount://login?uuid=792629d2-7ca7-46e0-ad59-c5b3149866cc';
+    }
+    return false;
+}`
+
+
+
+下面是鸿蒙web框架的对应实现方式，代码已经给出demo，可以采用搜索工具查找位置，来更改demo代码
+
+在module.json5的abbility中，添加：
+`"uris": [  
+  {  
+    "scheme": "jaccount",  
+    "host": "login",  
+    "port": "80"  
+  }  
+]`
+
+如果无法正常跳转，还需要手动添加拦截
+
+在Index.ets中，在处理链接拦截的部分添加
+
+`// 处理 jaccount: 链接 - 拉起交我办APP`
+
+`//这是一个拉起私有协议的标准范例。在module.json5中声明如果没有成功运行，可以采用这种拦截方式`
+
+`if (requestUrl.indexOf('jaccount:') === 0) {`
+
+`let context = this.getUIContext().getHostContext() as common.UIAbilityContext;`
+
+`let want: Want = {`
+
+`bundleName: 'edu.sjtu.jwb',`
+
+`action: 'ohos.want.action.viewData',`
+
+`uri: requestUrl`
+
+`};`
+
+`context.startAbility(want).then((data) => {`
+
+`console.info(拉起交我办APP成功: ${JSON.stringify(data)});`
+
+`}).catch((err: BusinessError) => {`
+
+`console.error(拉起交我办APP失败: ${err.code}, ${err.message});`
+
+`promptAction.showToast({ message: '未安装交我办APP，请先安装' });`
+
+`});`
+
+`return true;`
+
+`}`
+
+还可以参考以下官方文档
+
+[H5通过url scheme拉起应用-关键场景示例-公共关键技术方案 - 华为HarmonyOS开发者](https://developer.huawei.com/consumer/cn/doc/architecture-guides/app_pull_up-0000002353615821)
 
 ## 致谢
 

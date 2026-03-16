@@ -1,3 +1,5 @@
+//这个框架是github上载框架
+
 import { webview } from '@kit.ArkWeb';
 import { BusinessError, pasteboard, deviceInfo } from '@kit.BasicServicesKit';
 import { window, promptAction } from '@kit.ArkUI';
@@ -20,6 +22,7 @@ import { call } from '@kit.TelephonyKit';  // 新增：用于拨打电话
 //const url = "https://www.iconfont.cn";  //阿里巴巴矢量图库
 const url = "https://chat.qwen.ai";
 //const url = $rawfile('index.html')
+//const url = "https://oc.sjtu.edu.cn";
 
 // UA设置（修改为更精准的移动端标识）
 const forceMobileUA = false;  // 强制手机UA开关设置为true
@@ -382,6 +385,24 @@ struct WebComponent {
               }).catch((err: BusinessError) => {
                 console.error(`拉起短信应用失败: ${err.code}, ${err.message}`);
                 promptAction.showToast({ message: '拉起短信应用失败' });
+              });
+              return true;
+            }
+
+            // 处理 jaccount: 链接 - 拉起交我办APP
+            //这是一个拉起私有协议的标准范例。在module.json5中声明如果没有成功运行，可以采用这种拦截方式
+            if (requestUrl.indexOf('jaccount:') === 0) {
+              let context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+              let want: Want = {
+                bundleName: 'edu.sjtu.jwb',
+                action: 'ohos.want.action.viewData',
+                uri: requestUrl
+              };
+              context.startAbility(want).then((data) => {
+                console.info(`拉起交我办APP成功: ${JSON.stringify(data)}`);
+              }).catch((err: BusinessError) => {
+                console.error(`拉起交我办APP失败: ${err.code}, ${err.message}`);
+                promptAction.showToast({ message: '未安装交我办APP，请先安装' });
               });
               return true;
             }

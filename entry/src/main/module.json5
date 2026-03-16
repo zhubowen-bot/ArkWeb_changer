@@ -43,27 +43,42 @@
       }
     ],
     "abilities": [
-      {
-        "name": "EntryAbility",
-        "srcEntry": "./ets/entryability/EntryAbility.ets",
-        "description": "$string:EntryAbility_desc",
-        "icon": "$media:layered_image",
-        "label": "$string:EntryAbility_label",
-        "startWindowIcon": "$media:qwen_max_png",
-        "startWindowBackground": "$color:start_window_background",
-        "exported": true,
-        "skills": [
           {
-            "entities": [
-              "entity.system.home"
-            ],
-            "actions": [
-              "action.system.home"
+            "name": "EntryAbility",
+            "srcEntry": "./ets/entryability/EntryAbility.ets",
+            "description": "$string:EntryAbility_desc",
+            "icon": "$media:layered_image",
+            "label": "$string:EntryAbility_label",
+            "startWindowIcon": "$media:canvaspng",
+            "startWindowBackground": "$color:start_window_background",
+            "exported": true,
+            "skills": [
+              {
+                "entities": [
+                  "entity.system.home"
+                ],
+                "actions": [
+                  "action.system.home"
+                ]
+              },
+              {
+                "entities": [
+                  "entity.system.browser"
+                ],
+                "actions": [
+                  "action.view"
+                ],
+                "uris": [
+                  {
+                    "scheme": "jaccount",
+                    "host": "login",
+                    "port": "80"
+                  }
+                ]
+              }
             ]
           }
-        ]
-      }
-    ],
+        ],
     "extensionAbilities": [
       {
         "name": "EntryBackupAbility",
