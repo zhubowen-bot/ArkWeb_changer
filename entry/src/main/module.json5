@@ -49,7 +49,7 @@
             "description": "$string:EntryAbility_desc",
             "icon": "$media:layered_image",
             "label": "$string:EntryAbility_label",
-            "startWindowIcon": "$media:canvaspng",
+            "startWindowIcon": "$media:qwen_max_png",
             "startWindowBackground": "$color:start_window_background",
             "exported": true,
             "skills": [

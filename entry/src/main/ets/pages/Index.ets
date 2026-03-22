@@ -524,7 +524,7 @@ struct WebComponent {
             // 3. 小屏竖屏设备 → 移动端UA
             // 4. 其他情况（平板/2in1横屏或大屏） → PC端UA
             if (forceMobileUA || isMobileDevice || isSmallScreen) {
-              this.controller.setCustomUserAgent(mobileUserAgent + " QwenApp/1.0");
+              this.controller.setCustomUserAgent(mobileUserAgent );
               console.info('使用移动端UA');
             } else {
               this.controller.setCustomUserAgent(pcUserAgent);
