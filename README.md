@@ -20,8 +20,8 @@
 * 内置demo链接（网页和rawfile的本地引用示例）和许多软件图标
 * 内置demo权限共5个，设置了ohos.permission.CAMERA（允许应用使用相机），ohos.permission.GET_NETWORK_INFO（允许应用获取数据网络信息），ohos.permission.INTERNET（允许使用Internet网络），ohos.permission.MICROPHONE（允许应用使用麦克风），ohos.permission.PRINT（允许应用获取打印框架的能力）
 * 拦截强制跳转的app linking，正常加载网页（具体实现见后）
-
-
+  
+  
 
 ## 目录
 
@@ -38,8 +38,8 @@
 * 关于拦截APP Linking强制跳转
 
 * 致谢
-
-
+  
+  
 
 ## 部署项目：
 
@@ -126,7 +126,7 @@
 
 官方文档有基于url scheme的方案。本处给出的方案相比官方示例代码可复用性更强。
 
-在源代码中，已经开发了处理 maito 邮箱、tel 电话、sms 短信、weixin 微信、xhsdiscover 小红书、jaccount 上交大交我办APP 链接的部分。
+在源代码中，已经开发了处理 maito 邮箱、tel 电话、sms 短信、weixin 微信、xhsdiscover 小红书、jaccount 上交大交我办APP 及QQ登录 链接的部分。
 
 【适配步骤】
 
@@ -185,6 +185,46 @@
 `return true;`
 
 `}`
+
+方案2：拉起浏览器跳转解决“暂无可用打开方式”的问题
+
+对于QQ登录等部分情况，采用常规的指定报名会显示暂无可用打开方式。此时可以不指定包名采用浏览器跳转：
+
+区别在于不指定包名，而是加上：
+entities: ['entity.system.browsable']
+此时所有注册了scheme的都可以自动识别并拉起浏览器跳转
+
+> //` 处理 QQ登录链接 - 拉起QQ打开`
+> 
+> `if (requestUrl.indexOf('https://xui.ptlogin2.qq.com/') === 0) {`
+> 
+> `let context = this.getUIContext().getHostContext() as common.UIAbilityContext;`
+> 
+> `let want: Want = {`
+> 
+> `action: 'ohos.want.action.viewData',`
+> 
+> `entities: ['entity.system.browsable'],`
+> 
+> `uri: requestUrl`
+> 
+> `};`
+> 
+> `context.startAbility(want).then((data) => {`
+> 
+> `console.info(拉起QQ成功: ${JSON.stringify(data)});`
+> 
+> `}).catch((err: BusinessError) => {`
+> 
+> `console.error(拉起QQ失败: ${err.code} - ${err.message});`
+> 
+> `promptAction.showToast({ message: '未安装QQ，请先安装' });`
+> 
+> `});`
+> 
+> `return true;`
+> 
+> `}`
 
 官方文档的方案比本处复杂，不过也可以参考。
 
