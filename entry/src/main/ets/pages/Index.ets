@@ -442,6 +442,23 @@ struct WebComponent {
               return true;
             }
 
+            // 处理 QQ登录链接 - 拉起QQ打开
+            if (requestUrl.indexOf('https://xui.ptlogin2.qq.com/') === 0) {
+              let context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+              let want: Want = {
+                action: 'ohos.want.action.viewData',
+                entities: ['entity.system.browsable'],
+                uri: requestUrl
+              };
+              context.startAbility(want).then((data) => {
+                console.info(`拉起QQ成功: ${JSON.stringify(data)}`);
+              }).catch((err: BusinessError) => {
+                console.error(`拉起QQ失败: ${err.code} - ${err.message}`);
+                promptAction.showToast({ message: '未安装QQ，请先安装' });
+              });
+              return true;
+            }
+
             // 拦截豆包App Linking跳转（添加递归保护）
             if (requestUrl.indexOf('https://www.doubao.com') === 0) {
               // 检查是否已在加载此URL，避免递归
