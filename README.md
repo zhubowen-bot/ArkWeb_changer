@@ -326,5 +326,5 @@ private isProcessingDoubao: boolean = false; // 新增：豆包链接处理状�
 
 <<<<<<< Updated upstream
 
-* B站UP主[零炻] -开源仓库 https://github.com/littlestone0806/WebApp-ohos
-* 本项目基于这份初始代码深度优化开发而成
+本项目参考了以下项目的设计思路
+* [零炻littlestone] -开源仓库 https://github.com/littlestone0806/WebApp-ohos
